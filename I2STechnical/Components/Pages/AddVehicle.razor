@@ -1,0 +1,207 @@
+﻿@page "/add-vehicle"
+@using I2STechnical.Models
+@inject AppDbContext DbContext
+@using Microsoft.EntityFrameworkCore
+@inject NavigationManager NavigationManager
+
+<div class="container">
+    <h3>Tambah Data Kendaraan</h3>
+
+    <EditForm EditContext="@editContext" OnValidSubmit="@SaveVehicle" FormName="AddVehicleForm">
+        <DataAnnotationsValidator />
+
+        @if (showValidationSummary)
+        {
+            <div class="alert alert-danger">
+                <ValidationSummary />
+            </div>
+        }
+
+        <div class="form-group">
+            <label>No. Registrasi Kendaraan</label>
+            <InputText @bind-Value="newVehicle.RegistrationNumber" class="form-control" />
+            <ValidationMessage For="@(() => newVehicle.RegistrationNumber)" class="text-danger" />
+        </div>
+
+        <div class="form-group">
+            <label>Nama Pemilik</label>
+            <InputText @bind-Value="newVehicle.OwnerName" class="form-control" />
+            <ValidationMessage For="@(() => newVehicle.OwnerName)" class="text-danger" />
+        </div>
+
+        <div class="form-group">
+            <label>Merk Kendaraan</label>
+            <InputText @bind-Value="newVehicle.Brand" class="form-control" />
+            <ValidationMessage For="@(() => newVehicle.Brand)" class="text-danger" />
+        </div>
+
+        <div class="form-group">
+            <label>Alamat Pemilik Kendaraan</label>
+            <InputTextArea @bind-Value="newVehicle.Address" class="form-control" />
+            <ValidationMessage For="@(() => newVehicle.Address)" class="text-danger" />
+        </div>
+
+        <div class="form-group">
+            <label>Tahun Pembuatan</label>
+            <InputNumber @bind-Value="newVehicle.ManufactureYear" class="form-control" />
+            <ValidationMessage For="@(() => newVehicle.ManufactureYear)" class="text-danger" />
+        </div>
+
+        <div class="form-group">
+            <label>Kapasitas Silinder</label>
+            <InputNumber @bind-Value="newVehicle.CylinderCapacity" class="form-control" />
+            <ValidationMessage For="@(() => newVehicle.CylinderCapacity)" class="text-danger" />
+        </div>
+
+        <div class="form-group">
+            <label>Warna Kendaraan</label>
+            <InputSelect @bind-Value="newVehicle.Color" class="form-control">
+                <option value="">Pilih Warna</option>
+                <option value="Hitam">Hitam</option>
+                <option value="Merah">Merah</option>
+                <option value="Biru">Biru</option>
+            </InputSelect>
+            <ValidationMessage For="@(() => newVehicle.Color)" class="text-danger" />
+        </div>
+
+        <div class="form-group">
+            <label>Bahan Bakar</label>
+            <InputText @bind-Value="newVehicle.FuelType" class="form-control" />
+            <ValidationMessage For="@(() => newVehicle.FuelType)" class="text-danger" />
+        </div>
+
+        <div class="button-group">
+            <button type="submit" class="btn-simpan">Simpan</button>
+            <button type="button" class="btn-kembali" @onclick="GoBack">Kembali</button>
+        </div>
+    </EditForm>
+</div>
+
+<style>
+    .container {
+        padding: 20px;
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 15px;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .button-group {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .btn-simpan {
+        padding: 8px 16px;
+        background-color: #1976D2;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-simpan:hover {
+            background-color: #1565C0;
+        }
+
+    .btn-kembali {
+        padding: 8px 16px;
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+        .btn-kembali:hover {
+            background-color: #5a6268;
+        }
+
+    .text-danger {
+        color: #dc3545;
+        font-size: 0.875em;
+        margin-top: 4px;
+        display: block;
+    }
+
+    .alert {
+        padding: 12px;
+        margin-bottom: 16px;
+        border: 1px solid transparent;
+        border-radius: 4px;
+    }
+
+    .alert-danger {
+        color: #721c24;
+        background-color: #f8d7da;
+        border-color: #f5c6cb;
+    }
+
+    .valid.modified:not([type=checkbox]) {
+        outline: 1px solid #26b050;
+    }
+
+    .invalid {
+        outline: 1px solid red;
+    }
+
+    .validation-message {
+        color: red;
+    }
+</style>
+
+@code {
+    private Vehicle newVehicle = new Vehicle();
+    private bool showValidationSummary = false;
+    private EditContext editContext;
+
+    protected override void OnInitialized()
+    {
+        editContext = new EditContext(newVehicle);
+        newVehicle.ManufactureYear = 1999;
+        newVehicle.CylinderCapacity = 99;
+    }
+
+    private async Task SaveVehicle()
+    {
+        try
+        {
+            if (editContext.Validate())
+            {
+                DbContext.Vehicles.Add(newVehicle);
+                await DbContext.SaveChangesAsync();
+                NavigationManager.NavigateTo("/vehicles");
+            }
+            else
+            {
+                showValidationSummary = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            // Consider logging the exception
+            showValidationSummary = true;
+        }
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/vehicles");
+    }
+}

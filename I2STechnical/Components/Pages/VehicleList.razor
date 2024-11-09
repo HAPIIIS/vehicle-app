@@ -1,0 +1,183 @@
+﻿@page "/vehicle"
+@using I2STechnical.Models
+@using Microsoft.EntityFrameworkCore
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@inject AppDbContext DbContext
+
+<div class="container">
+    <div class="search-panel">
+        <div class="input-group">
+            <input type="text" @bind="registrationSearch" @bind:event="oninput" placeholder="No Registrasi" />
+            <input type="text" @bind="nameSearch" @bind:event="oninput" placeholder="Nama Pemilik" />
+            <button class="btn-search" @onclick="Search">Search</button>
+            <button class="btn-add" @onclick="Add">Add</button>
+        </div>
+    </div>
+
+    <table class="vehicle-table">
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>No Registrasi</th>
+                <th>Nama Pemilik</th>
+                <th>Merk Kendaraan</th>
+                <th>Tahun Pembuatan</th>
+                <th>Kapasitas</th>
+                <th>Warna</th>
+                <th>Bahan Bakar</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var (vehicle, index) in filteredVehicles.Select((v, i) => (v, i)))
+            {
+                <tr>
+                    <td>@(index + 1)</td>
+                    <td>@vehicle.RegistrationNumber</td>
+                    <td>@vehicle.OwnerName</td>
+                    <td>@vehicle.Brand</td>
+                    <td>@vehicle.ManufactureYear</td>
+                    <td>@vehicle.CylinderCapacity cc</td>
+                    <td>@vehicle.Color</td>
+                    <td>@vehicle.FuelType</td>
+                    <td>
+                        <button class="btn-detail" @onclick="() => Detail(vehicle)">Detail</button>
+                        <button class="btn-edit" @onclick="() => Edit(vehicle)">Edit</button>
+                        <button class="btn-delete" @onclick="() => Delete(vehicle)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .container {
+        padding: 20px;
+    }
+
+    .search-panel {
+        background-color: #FFF3E0;
+        padding: 20px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+
+    .input-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    input {
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+
+    .btn-search, .btn-add {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        background-color: #1976D2;
+        color: white;
+        cursor: pointer;
+    }
+
+    .vehicle-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+
+        .vehicle-table th, .vehicle-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .vehicle-table th {
+            background-color: #f5f5f5;
+        }
+
+    .btn-detail {
+        color: #1976D2;
+        text-decoration: underline;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+    }
+
+    .btn-edit {
+        color: #1976D2;
+        text-decoration: underline;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+    }
+
+    .btn-delete {
+        color: #DC3545;
+        text-decoration: underline;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+    }
+</style>
+
+@code {
+    private string registrationSearch = "";
+    private string nameSearch = "";
+    private List<Vehicle> vehicles = new List<Vehicle>();
+    private List<Vehicle> filteredVehicles = new List<Vehicle>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadVehicles();
+    }
+
+    private async Task LoadVehicles()
+    {
+        vehicles = await DbContext.Vehicles.ToListAsync();
+        filteredVehicles = vehicles;
+    }
+
+    private void Search()
+    {
+        filteredVehicles = vehicles.Where(v =>
+            (string.IsNullOrWhiteSpace(registrationSearch) ||
+             v.RegistrationNumber.Contains(registrationSearch, StringComparison.OrdinalIgnoreCase)) &&
+            (string.IsNullOrWhiteSpace(nameSearch) ||
+             v.OwnerName.Contains(nameSearch, StringComparison.OrdinalIgnoreCase))
+        ).ToList();
+    }
+
+    private void Add()
+    {
+        NavigationManager.NavigateTo("/add-vehicle");
+    }
+
+    private void Detail(Vehicle vehicle)
+    {
+        NavigationManager.NavigateTo($"/detail-vehicle/{vehicle.RegistrationNumber}");
+    }
+
+    private void Edit(Vehicle vehicle)
+    {
+        NavigationManager.NavigateTo($"/edit-vehicle/{vehicle.RegistrationNumber}");
+    }
+
+    private async Task Delete(Vehicle vehicle)
+    {
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Anda yakin menghapus data {vehicle.RegistrationNumber}?");
+        if (confirmed)
+        {
+            DbContext.Vehicles.Remove(vehicle);
+            await DbContext.SaveChangesAsync();
+            await LoadVehicles();
+        }
+    }
+}
